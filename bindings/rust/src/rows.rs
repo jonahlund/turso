@@ -50,6 +50,9 @@ impl Rows {
                         let row = stmt.row().unwrap();
                         Poll::Ready(Ok(Some(Row {
                             values: row.get_values().map(|v| v.to_owned()).collect(),
+                            names: (0..stmt.num_columns())
+                                .map(|idx| stmt.get_column_name(idx).into_owned())
+                                .collect(),
                         })))
                     }
                     turso_core::StepResult::Done => Poll::Ready(Ok(None)),
@@ -81,14 +84,19 @@ impl Rows {
 #[derive(Debug)]
 pub struct Row {
     values: Vec<turso_core::Value>,
+    names: Vec<String>,
 }
 
 unsafe impl Send for Row {}
 unsafe impl Sync for Row {}
 
 impl Row {
-    pub fn get_value(&self, index: usize) -> Result<Value> {
-        let value = &self.values[index];
+    pub fn get_value<I>(&self, idx: I) -> Result<Value>
+    where
+        I: RowIndex,
+    {
+        let idx = idx.idx(self)?;
+        let value = &self.values[idx];
         match value {
             turso_core::Value::Integer(i) => Ok(Value::Integer(*i)),
             turso_core::Value::Null => Ok(Value::Null),
@@ -98,16 +106,32 @@ impl Row {
         }
     }
 
-    pub fn get<T>(&self, idx: usize) -> Result<T>
+    pub fn get<I, T>(&self, idx: I) -> Result<T>
     where
+        I: RowIndex,
         T: FromValue,
     {
+        let idx = idx.idx(self)?;
         let val = &self.values[idx];
         T::from_sql(val.clone()).map_err(|err| Error::ConversionFailure(err.to_string()))
     }
 
     pub fn column_count(&self) -> usize {
         self.values.len()
+    }
+
+    pub fn column_index(&self, name: &str) -> Result<usize> {
+        let idx = self
+            .names
+            .iter()
+            .position(|n| n == name)
+            .ok_or_else(|| Error::InvalidColumnName(name.to_string()))?;
+
+        if idx > self.column_count() {
+            return Err(Error::InvalidColumnIndex(idx));
+        }
+
+        Ok(idx)
     }
 }
 
@@ -124,6 +148,31 @@ impl<'a> FromIterator<&'a turso_core::Value> for Row {
             })
             .collect();
 
-        Row { values }
+        Row {
+            values,
+            names: vec![],
+        }
+    }
+}
+
+pub trait RowIndex {
+    fn idx(&self, row: &Row) -> Result<usize>;
+}
+
+impl RowIndex for usize {
+    #[inline]
+    fn idx(&self, row: &Row) -> Result<usize> {
+        if *self >= row.column_count() {
+            Err(Error::InvalidColumnIndex(*self))
+        } else {
+            Ok(*self)
+        }
+    }
+}
+
+impl RowIndex for &'_ str {
+    #[inline]
+    fn idx(&self, row: &Row) -> Result<usize> {
+        row.column_index(self)
     }
 }

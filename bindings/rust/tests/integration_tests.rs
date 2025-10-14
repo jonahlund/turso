@@ -326,8 +326,8 @@ async fn test_index() {
         .await
         .unwrap();
     let row = rows.next().await.unwrap().unwrap();
-    assert!(row.get::<String>(0).unwrap() == "alice");
-    assert!(row.get::<String>(1).unwrap() == "a@b.c");
+    assert!(row.get::<_, String>(0).unwrap() == "alice");
+    assert!(row.get::<_, String>(1).unwrap() == "a@b.c");
     assert!(rows.next().await.unwrap().is_none());
 
     let mut rows = conn
@@ -335,8 +335,8 @@ async fn test_index() {
         .await
         .unwrap();
     let row = rows.next().await.unwrap().unwrap();
-    assert!(row.get::<String>(0).unwrap() == "bob");
-    assert!(row.get::<String>(1).unwrap() == "b@d.e");
+    assert!(row.get::<_, String>(0).unwrap() == "bob");
+    assert!(row.get::<_, String>(1).unwrap() == "b@d.e");
     assert!(rows.next().await.unwrap().is_none());
 }
 
@@ -447,8 +447,8 @@ async fn test_encryption() {
         let mut row_count = 0;
         let mut rows = conn.query("SELECT * FROM test", ()).await.unwrap();
         while let Some(row) = rows.next().await.unwrap() {
-            assert_eq!(row.get::<i64>(0).unwrap(), 1);
-            assert_eq!(row.get::<String>(1).unwrap(), "Hello, World!");
+            assert_eq!(row.get::<_, i64>(0).unwrap(), 1);
+            assert_eq!(row.get::<_, String>(1).unwrap(), "Hello, World!");
             row_count += 1;
         }
         assert_eq!(row_count, 1);
@@ -467,8 +467,8 @@ async fn test_encryption() {
         let mut row_count = 0;
         let mut rows = conn.query("SELECT * FROM test", ()).await.unwrap();
         while let Some(row) = rows.next().await.unwrap() {
-            assert_eq!(row.get::<i64>(0).unwrap(), 1);
-            assert_eq!(row.get::<String>(1).unwrap(), "Hello, World!");
+            assert_eq!(row.get::<_, i64>(0).unwrap(), 1);
+            assert_eq!(row.get::<_, String>(1).unwrap(), "Hello, World!");
             row_count += 1;
         }
         assert_eq!(row_count, 1);

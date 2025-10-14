@@ -350,7 +350,7 @@ mod test {
                 .query_row(())
                 .await?;
 
-            assert_eq!(2, result.get::<i32>(0)?);
+            assert_eq!(2, result.get::<_, i32>(0)?);
             tx.finish().await?;
         }
         Ok(())
@@ -391,7 +391,7 @@ mod test {
             .await?
             .query_row(())
             .await?;
-        assert_eq!(2, result.get::<i32>(0)?);
+        assert_eq!(2, result.get::<_, i32>(0)?);
         Ok(())
     }
 
@@ -421,7 +421,7 @@ mod test {
                 .await?
                 .query_row(())
                 .await?;
-            assert_eq!(6, result.get::<i32>(0)?);
+            assert_eq!(6, result.get::<_, i32>(0)?);
         }
         Ok(())
     }

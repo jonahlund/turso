@@ -70,6 +70,10 @@ pub enum Error {
     QueryReturnedNoRows,
     #[error("Conversion failure: `{0}`")]
     ConversionFailure(String),
+    #[error("Invalid column index: `{0}`")]
+    InvalidColumnIndex(usize),
+    #[error("Invalid column name: `{0}`")]
+    InvalidColumnName(String),
 }
 
 impl From<turso_core::LimboError> for Error {
